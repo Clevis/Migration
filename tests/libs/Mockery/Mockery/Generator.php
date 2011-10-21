@@ -149,8 +149,8 @@ class Generator
 				continue;
 			}
 			if (!$method->isDestructor()
-			&& !$method->isStatic()
 			&& $method->getName() !== '__call'
+			&& $method->getName() !== '__callStatic'
 			&& $method->getName() !== '__clone'
 			&& $method->getName() !== '__wakeup'
 			&& $method->getName() !== '__set'
