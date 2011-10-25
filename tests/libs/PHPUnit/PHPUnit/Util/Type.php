@@ -156,6 +156,7 @@ class PHPUnit_Util_Type
 	{
 		if (is_array($value) || is_object($value)) {
 			if (!$short) {
+				return "\n" . htmlspecialchars_decode(strip_tags(Nette\Diagnostics\Debugger::dump($value, TRUE)), ENT_NOQUOTES);
 				return "\n" . print_r($value, TRUE);
 			} else {
 				if (is_array($value)) {
