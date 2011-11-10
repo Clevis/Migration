@@ -217,6 +217,7 @@ BODY;
 		}
 		if ($method->isStatic()) {
 			$access .= ' static';
+			$body = str_replace('$this->__call(', 'static::__callStatic(', $body);
 		}
 		return $access . ' function ' . $name . '(' . $paramDef . ')'
 						  . '{' . $body . '}';
@@ -535,9 +536,9 @@ BODY;
 			return \$associatedRealObject->__call(\$method, \$args);
 		} catch (\BadMethodCallException \$e) {
 			throw new \BadMethodCallException(
-				'Static method ' . \$this->_mockery_name . '::' . \$method
+				'Static method ' . \$associatedRealObject->_mockery_name . '::' . \$method
 				. '() does not exist on this mock object'
-			);
+			, NULL, \$e);
 		}
 	}
 
