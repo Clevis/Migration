@@ -73,9 +73,9 @@ class Runner extends Object
 
 	protected function runWipe()
 	{
-		foreach ($this->dibi->getDatabaseInfo()->getTableNames() as $table)
+		foreach ($this->dibi->getDatabaseInfo()->getTables() as $table)
 		{
-			$this->dibi->query('DROP TABLE %n', $table);
+			$this->dibi->query('DROP ' . ($table->isView() ? 'VIEW' :'TABLE') . ' %n', $table->getName());
 		}
 	}
 

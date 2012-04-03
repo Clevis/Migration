@@ -141,10 +141,12 @@ class Runner_run_Test extends TestCase
 			array('name' => 'foo'),
 			array('name' => 'bar'),
 			array('name' => 'migrations'),
+			array('name' => 'view_table', 'view' => true),
 		))->once()->ordered();
 		$this->qar('DROP TABLE `foo`');
 		$this->qar('DROP TABLE `bar`');
 		$this->qar('DROP TABLE `migrations`');
+		$this->qar('DROP VIEW `view_table`');
 		$this->runner->runWipe();
 		$this->assertTrue(true);
 	}
