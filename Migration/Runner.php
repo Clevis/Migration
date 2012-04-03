@@ -154,9 +154,53 @@ class Runner extends Object
 		// mysql pri nekterych operacich commitne (CREATE/ALTER TABLE) http://dev.mysql.com/doc/refman/5.6/en/implicit-commit.html
 		// proto se radeji kontroluje jestli bylo dokonceno
 		$id = $this->dibi->insert('migrations', $sql->toArray())->execute(\dibi::IDENTIFIER);
-		$count = $this->dibi->loadFile($sql->path);
+		$count = $this->loadFile($sql->path);
+		if ($count === 0)
+		{
+			throw new Exception("{$sql->file} neobsahuje zadne sql.");
+		}
 		$this->dibi->update('migrations', array('ready' => 1))->where('[id] = %s', $id)->execute();
 		$this->dibi->commit();
+		return $count;
+	}
+
+	/**
+	 * Import SQL dump from file - extreme fast!
+	 * V dibi obsahuje chybu https://github.com/dg/dibi/issues/63
+	 * @param  string  filename
+	 * @return int  count of sql commands
+	 * @author David Grudl
+	 */
+	protected function loadFile($file)
+	{
+		$driver = $this->dibi->getDriver();
+		@set_time_limit(0); // intentionally @
+
+		$handle = @fopen($file, 'r'); // intentionally @
+		if (!$handle)
+		{
+			throw new RuntimeException("Cannot open file '$file'.");
+		}
+
+		$count = 0;
+		$sql = '';
+		while (!feof($handle))
+		{
+			$s = fgets($handle);
+			$sql .= $s;
+			if (substr(rtrim($s), -1) === ';')
+			{
+				$driver->query($sql);
+				$sql = '';
+				$count++;
+			}
+		}
+		fclose($handle);
+		if (trim($sql))
+		{
+			$driver->query($sql);
+			$count++;
+		}
 		return $count;
 	}
 

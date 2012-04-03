@@ -322,4 +322,41 @@ class Runner_run_Test extends TestCase
 		$this->assertSame(3, $count);
 	}
 
+	public function testExecuteNoSemicolon()
+	{
+		list($a, $b, $files) = $this->testGetAllFiles();
+
+		$this->driver->shouldReceive('begin')->with(NULL)->andReturn()->once()->ordered();
+		$this->qar("INSERT INTO `migrations` (`id`, `file`, `checksum`, `executed`) VALUES (NULL, '_1.sql', 'c4ca4238a0b923820dcc509a6f75849b', " . $this->driver->escape(new DateTime('now'), Dibi::DATETIME) . ")");
+		$this->driver->shouldReceive('getInsertId')->with(NULL)->andReturn(123)->once()->ordered();
+
+		$this->driver->shouldReceive('query')->with("\n\t\t\tSELECT foobar;\n")->once()->ordered();
+		$this->driver->shouldReceive('query')->with("\t\t\tDO WHATEVER;\n")->once()->ordered();
+		$this->driver->shouldReceive('query')->with("\t\t\tHELLO\n\t\t")->once()->ordered();
+
+		$this->qar("UPDATE `migrations` SET `ready`=1 WHERE `id` = '123'");
+		$this->driver->shouldReceive('commit')->with(NULL)->andReturn()->once()->ordered();
+
+		file_put_contents($a, '
+			SELECT foobar;
+			DO WHATEVER;
+			HELLO
+		');
+		$count = $this->runner->execute($files[$a]);
+		unlink($a);
+		$this->assertSame(3, $count);
+	}
+
+	public function testExecuteEmpty()
+	{
+		list($a, $b, $files) = $this->testGetAllFiles();
+
+		$this->driver->shouldReceive('begin')->with(NULL)->andReturn()->once()->ordered();
+		$this->qar("INSERT INTO `migrations` (`id`, `file`, `checksum`, `executed`) VALUES (NULL, '_1.sql', 'c4ca4238a0b923820dcc509a6f75849b', " . $this->driver->escape(new DateTime('now'), Dibi::DATETIME) . ")");
+		$this->driver->shouldReceive('getInsertId')->with(NULL)->andReturn(123)->once()->ordered();
+
+		file_put_contents($a, "\n\t\t\n");
+		$this->setExpectedException('Migration\Exception', '_1.sql neobsahuje zadne sql.');
+		$this->runner->execute($files[$a]);
+	}
 }
