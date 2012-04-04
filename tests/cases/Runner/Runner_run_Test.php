@@ -76,6 +76,7 @@ class Runner_run_Test extends TestCase
 
 		$this->assertSame(array(
 			array('runSetup'),
+			array('lock'),
 			array('runInitMigrationTable'),
 			array('getAllMigrations'),
 			array('getAllFiles', __DIR__),
@@ -98,6 +99,7 @@ class Runner_run_Test extends TestCase
 
 		$this->assertSame(array(
 			array('runSetup'),
+			array('lock'),
 			array('runWipe'),
 			array('runInitMigrationTable'),
 			array('getAllMigrations'),

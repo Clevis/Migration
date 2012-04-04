@@ -51,4 +51,14 @@ class Runner_Mock extends Migration\Runner
 		return 5;
 	}
 
+	protected function lock()
+	{
+		$this->log[] = array(__FUNCTION__);
+	}
+
+	public function unLock()
+	{
+		$this->log[] = array(__FUNCTION__);
+	}
+
 }

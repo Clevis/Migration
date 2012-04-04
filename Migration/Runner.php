@@ -5,6 +5,7 @@ namespace Migration;
 use Nette\Object;
 use Nette\Utils\Finder;
 use DibiConnection;
+use Nette\DateTime;
 
 /**
  * <code>
@@ -41,6 +42,7 @@ class Runner extends Object
 	{
 		try {
 			$this->runSetup();
+			$this->lock();
 			if ($reset)
 			{
 				$this->runWipe();
@@ -71,10 +73,46 @@ class Runner extends Object
 		$this->dibi->query("SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO'");
 	}
 
+	protected function lock()
+	{
+		$dibi = $this->dibi;
+		$_this = $this;
+		$lock = function () use ($dibi, $_this) {
+			try {
+				$dibi->query("CREATE TABLE %n ([foo] varchar(1) NOT NULL) ENGINE='InnoDB'", 'migrations-lock');
+			} catch (\Exception $e) {
+				return false;
+			}
+			register_shutdown_function(function () use ($_this) { $_this->unLock(); });
+			return true;
+		};
+
+		$times = 0;
+		while (!$lock())
+		{
+			if ($times++ > 100)
+			{
+				throw new Exception('Lock error');
+			}
+			usleep(500000); // 500ms
+		}
+	}
+
+	/**
+	 * @access protected
+	 */
+	public function unLock()
+	{
+		try {
+			$this->dibi->query('DROP TABLE IF EXISTS %n', 'migrations-lock');
+		} catch (\Exception $e) {}
+	}
+
 	protected function runWipe()
 	{
 		foreach ($this->dibi->getDatabaseInfo()->getTables() as $table)
 		{
+			if ($table->getName() === 'migrations-lock') continue;
 			$this->dibi->query('DROP ' . ($table->isView() ? 'VIEW' :'TABLE') . ' %n', $table->getName());
 		}
 	}
