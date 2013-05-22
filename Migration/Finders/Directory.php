@@ -66,6 +66,11 @@ class Directory extends Object implements Migration\IFinder
 	 */
 	protected function getExtensionForFileName($fileName)
 	{
+		if (strpos($fileName, '.') === 0)
+		{
+			return FALSE;
+		}
+
 		$posibles = array();
 		foreach ($this->extensionPaterns as $name => $patern)
 		{
