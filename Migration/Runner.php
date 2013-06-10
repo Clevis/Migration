@@ -33,7 +33,11 @@ class Runner extends Object
 	public function __construct(DibiConnection $dibi, IPrinter $printer = NULL)
 	{
 		$this->dibi = $dibi;
-		$this->printer = $printer === NULL ? new Printers\HtmlDump : $printer;
+		$this->printer = $printer === NULL
+			? (php_sapi_name() === "cli"
+				? new Printers\Console
+				: new Printers\HtmlDump
+			) : $printer;
 		$this->addExtension(new Extensions\Sql($dibi));
 	}
 
