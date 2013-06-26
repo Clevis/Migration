@@ -3,7 +3,6 @@
 namespace Migration;
 
 use Nette\Object;
-use Nette\Utils\Finder;
 use DibiConnection;
 use Nette\DateTime;
 
@@ -24,6 +23,9 @@ class Runner extends Object
 	/** @var IPrinter */
 	private $printer;
 
+	/** @var array name => IExtension */
+	private $extensions;
+
 	/**
 	 * @param DibiConnection
 	 * @param IPrinter
@@ -31,14 +33,15 @@ class Runner extends Object
 	public function __construct(DibiConnection $dibi, IPrinter $printer = NULL)
 	{
 		$this->dibi = $dibi;
-		$this->printer = $printer === NULL ? new DumpPrinter : $printer;
+		$this->printer = $printer === NULL ? new Printers\HtmlDump : $printer;
+		$this->addExtension(new Extensions\Sql($dibi));
 	}
 
 	/**
-	 * @param string
+	 * @param string|IFinder
 	 * @param bool Kdyz true, tak nejprve smaze celou databazi.
 	 */
-	public function run($dir, $reset = false)
+	public function run($finderOrDirectory, $reset = false)
 	{
 		try {
 			$this->runSetup();
@@ -50,7 +53,7 @@ class Runner extends Object
 			}
 			$this->runInitMigrationTable();
 
-			$toExecute = $this->getToExecute($this->getAllMigrations(), $this->getAllFiles($dir));
+			$toExecute = $this->getToExecute($this->getAllMigrations(), $this->getAllFiles($finderOrDirectory));
 
 			$this->printer->printToExecute($toExecute);
 
@@ -63,6 +66,34 @@ class Runner extends Object
 		} catch (Exception $e) {
 			$this->printer->printError($e);
 		}
+	}
+
+	/**
+	 * @param IExtension
+	 * @return Runner $this
+	 */
+	public function addExtension(IExtension $extension)
+	{
+		$name = $extension->getName();
+		if (isset($this->extensions[$name]))
+		{
+			throw new Exception("Extension '$name' already defined.");
+		}
+		$this->extensions[$name] = $extension;
+		return $this;
+	}
+
+	/**
+	 * @param string
+	 * @return IExtension
+	 */
+	protected function getExtension($name)
+	{
+		if (!isset($this->extensions[$name]))
+		{
+			throw new Exception("Extension '$name' not found.");
+		}
+		return $this->extensions[$name];
 	}
 
 	protected function runSetup()
@@ -136,22 +167,19 @@ class Runner extends Object
 	}
 
 	/**
-	 * @param string
-	 * @return array of MigrationSqlFile
+	 * @param string|IFinder
+	 * @return array of File
 	 */
-	protected function getAllFiles($dir)
+	protected function getAllFiles($finderOrDirectory)
 	{
-		$files = iterator_to_array(Finder::findFiles('*.sql')->in($dir));
-		ksort($files);
-		return array_map(function ($sql) {
-			return new MigrationSqlFile($sql);
-		}, $files);
+		$finder = $finderOrDirectory instanceof IFinder ? $finderOrDirectory : new Finders\Directory($finderOrDirectory);
+		return $finder->find(array_keys($this->extensions));
 	}
 
 	/**
 	 * @param array {@see self::getAllMigrations()}
 	 * @param array {@see self::getAllFiles()}
-	 * @return array of MigrationSqlFile
+	 * @return array of File
 	 */
 	protected function getToExecute(array $migrations, array $files)
 	{
@@ -183,62 +211,24 @@ class Runner extends Object
 	}
 
 	/**
-	 * @param MigrationSqlFile
+	 * @param File
 	 * @return int Pocet queries.
 	 */
-	protected function execute(MigrationSqlFile $sql)
+	protected function execute(File $sql)
 	{
 		$this->dibi->begin();
 		// mysql pri nekterych operacich commitne (CREATE/ALTER TABLE) http://dev.mysql.com/doc/refman/5.6/en/implicit-commit.html
 		// proto se radeji kontroluje jestli bylo dokonceno
 		$id = $this->dibi->insert('migrations', $sql->toArray())->execute(\dibi::IDENTIFIER);
-		$count = $this->loadFile($sql->path);
-		if ($count === 0)
-		{
-			throw new Exception("{$sql->file} neobsahuje zadne sql.");
+
+		try {
+			$count = $this->getExtension($sql->extension)->execute($sql);
+		} catch (\Exception $e) {
+			throw new Exception("Error in: '{$sql->file}'.", NULL, $e);
 		}
+
 		$this->dibi->update('migrations', array('ready' => 1))->where('[id] = %s', $id)->execute();
 		$this->dibi->commit();
-		return $count;
-	}
-
-	/**
-	 * Import SQL dump from file - extreme fast!
-	 * V dibi obsahuje chybu https://github.com/dg/dibi/issues/63
-	 * @param  string  filename
-	 * @return int  count of sql commands
-	 * @author David Grudl
-	 */
-	protected function loadFile($file)
-	{
-		$driver = $this->dibi->getDriver();
-		@set_time_limit(0); // intentionally @
-
-		$handle = @fopen($file, 'r'); // intentionally @
-		if (!$handle)
-		{
-			throw new RuntimeException("Cannot open file '$file'.");
-		}
-
-		$count = 0;
-		$sql = '';
-		while (!feof($handle))
-		{
-			$s = fgets($handle);
-			$sql .= $s;
-			if (substr(rtrim($s), -1) === ';')
-			{
-				$driver->query($sql);
-				$sql = '';
-				$count++;
-			}
-		}
-		fclose($handle);
-		if (trim($sql))
-		{
-			$driver->query($sql);
-			$count++;
-		}
 		return $count;
 	}
 

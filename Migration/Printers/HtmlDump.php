@@ -1,14 +1,16 @@
 <?php
 
-namespace Migration;
+namespace Migration\Printers;
 
 use Nette\Object;
+use Migration;
+
 
 /**
  * Echoje informace na vystup jako html.
  * @author Petr Procházka
  */
-class DumpPrinter extends Object implements IPrinter
+class HtmlDump extends Object implements Migration\IPrinter
 {
 
 	/** Migrace se nejprve resetovala. */
@@ -19,7 +21,7 @@ class DumpPrinter extends Object implements IPrinter
 
 	/**
 	 * Seznam migraci ktere se spusti.
-	 * @param array of MigrationSqlFile
+	 * @param array of Migration\File
 	 */
 	public function printToExecute(array $toExecute)
 	{
@@ -28,10 +30,10 @@ class DumpPrinter extends Object implements IPrinter
 
 	/**
 	 * Provedena migrace.
-	 * @param MigrationSqlFile
+	 * @param Migration\File
 	 * @param int Pocet queries
 	 */
-	public function printExecute(MigrationSqlFile $sql, $count)
+	public function printExecute(Migration\File $sql, $count)
 	{
 		$this->dump($sql->file . '; ' . $count . ' queries');
 	}
@@ -46,7 +48,7 @@ class DumpPrinter extends Object implements IPrinter
 	 * Nastala chyba.
 	 * @param Migration\Exception
 	 */
-	public function printError(Exception $e)
+	public function printError(Migration\Exception $e)
 	{
 		$this->dump('ERROR: ' . $e->getMessage());
 		throw $e;

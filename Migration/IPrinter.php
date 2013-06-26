@@ -13,16 +13,16 @@ interface IPrinter
 
 	/**
 	 * Seznam migraci ktere se spusti.
-	 * @param array of MigrationSqlFile
+	 * @param array of File
 	 */
 	public function printToExecute(array $toExecute);
 
 	/**
 	 * Provedena migrace.
-	 * @param MigrationSqlFile
+	 * @param File
 	 * @param int Pocet queries
 	 */
-	public function printExecute(MigrationSqlFile $sql, $count);
+	public function printExecute(File $file, $count);
 
 	/** Vse vporadku/dokonceno */
 	public function printDone();
