@@ -105,7 +105,7 @@ class Runner extends Object
 		$this->dibi->query('SET NAMES utf8');
 		$this->dibi->query('SET foreign_key_checks = 0');
 		$this->dibi->query("SET time_zone = 'SYSTEM'");
-		$this->dibi->query("SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO'");
+		$this->dibi->query("SET sql_mode = 'TRADITIONAL'");
 	}
 
 	protected function lock()
