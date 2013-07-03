@@ -61,10 +61,12 @@ class Console extends Object implements Migration\IPrinter
 	/** @var string */
 	protected function output($s, $color = NULL)
 	{
+		$useColors = preg_match('#^xterm|^screen#', getenv('TERM'));
+
 		if ($color && !in_array($color, self::getColors())) {
 			throw new \Nette\InvalidArgumentException('Invalid color specified, expected `self::COLOR_[SUCCESS|NOTICE|ERROR]`.');
 		}
-		if (!$color)
+		if (!$color || !$useColors)
 		{
 			echo "$s\n";
 		}
