@@ -46,10 +46,15 @@ class OrmPhp extends SimplePhp
 		return 'orm.php';
 	}
 
+	/**
+	 * @param Migration\File $sql
+	 * @return int
+	 */
 	public function execute(Migration\File $sql)
 	{
-		parent::execute($sql);
+		$count = parent::execute($sql);
 		$this->orm->flush();
 		$this->orm = NULL;
+		return $count;
 	}
 }

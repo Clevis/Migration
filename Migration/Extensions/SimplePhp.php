@@ -61,7 +61,7 @@ class SimplePhp extends Object implements Migration\IExtension
 	public function execute(Migration\File $sql)
 	{
 		extract($this->getParameters());
-		include $sql->path;
+		return include $sql->path;
 	}
 
 }
