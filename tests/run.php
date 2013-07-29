@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/../libs/Nette/loader.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/libs/HttpPHPUnit/init.php';
 
 $http = new HttpPHPUnit;
