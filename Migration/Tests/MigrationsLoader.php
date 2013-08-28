@@ -49,7 +49,7 @@ class MigrationsLoader extends Object
 		$finder->addDirectory($migrationsPath . '/struct');
 		$finder->addDirectory($migrationsPath . '/data');
 
-		$migrations = new Migration\Runner($connection);
+		$migrations = new Migration\Runner($connection, new Migration\Printers\HtmlDump);
 		ob_start();
 		$migrations->run($finder, FALSE, TRUE);
 		$result = ob_get_clean();
