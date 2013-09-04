@@ -41,7 +41,7 @@ class MigrationsLoader extends Object
 		$connection->query('SHOW DATABASES WHERE %n', 'Database', ' = %s', $dbName)
 			->count()
 		);
-		$connection->query('CREATE DATABASE %n', $dbName);
+		$connection->query('CREATE DATABASE %n COLLATE=utf8_czech_ci', $dbName);
 		$connection->query('USE %n', $dbName);
 
 		$migrationsPath = $this->context->parameters['wwwDir'] . '/' . $this->context->parameters['migrations']['path'];
