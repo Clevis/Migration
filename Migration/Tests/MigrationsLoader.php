@@ -49,7 +49,7 @@ class MigrationsLoader extends Object
 		$finder->addDirectory($migrationsPath . '/struct');
 		$finder->addDirectory($migrationsPath . '/data');
 
-		$migrations = new Migration\Runner($connection, new Migration\Printers\HtmlDump);
+		$migrations = $this->createRunner($connection);
 		ob_start();
 		$migrations->run($finder, FALSE, TRUE);
 		$result = ob_get_clean();
@@ -58,6 +58,15 @@ class MigrationsLoader extends Object
 			throw new \Exception('Migrace neproběhly v pořádku: ' . $result);
 		}
 		$this->context->parameters['testDbName'] = $dbName;
+	}
+
+	/**
+	 * @param $connection
+	 * @return Migration\Runner
+	 */
+	protected function createRunner($connection)
+	{
+		return new Migration\Runner($connection, new Migration\Printers\HtmlDump);
 	}
 
 }

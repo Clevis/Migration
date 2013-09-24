@@ -3,9 +3,8 @@
 namespace Migration\Extensions;
 
 use Migration\Extensions\name;
-use Migration\Extensions\SimplePhp;
 
-class DibiMigrationsExtension extends SimplePhp
+class DibiPhp extends SimplePhp
 {
 
 	public function __construct(\DibiConnection $dibi)
