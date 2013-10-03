@@ -2,14 +2,14 @@
 
 namespace Migration\Extensions;
 
-use Migration\Extensions\name;
+use DibiConnection;
 
 class DibiPhp extends SimplePhp
 {
 
-	public function __construct(\DibiConnection $dibi)
+	public function __construct(DibiConnection $dibi)
 	{
-		parent::__construct(['dibi' => $dibi]);
+		parent::__construct(array('dibi' => $dibi));
 	}
 
 	public function getName()

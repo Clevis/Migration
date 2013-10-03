@@ -8,6 +8,12 @@ use DateTime;
 
 /**
  * @author Petr Procházka
+ *
+ * @property-read string $path
+ * @property-read string $extension
+ * @property-read string $file
+ * @property-read string $checksum
+ * @property-read string $executed
  */
 class File extends Object
 {
