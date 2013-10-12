@@ -1,15 +1,17 @@
 {
 	"name": "clevis/migration",
-	"description": "Simple library for loading database migrations",
-	"version": "0.1.0",
+	"description": "Simple database migrations runner",
 	"type": "library",
-
 	"require": {
-		"php": ">=5.3.0",
-		"dg/dibi": "2.1.*",
-		"mockery/mockery": "dev-master"
+		"php": "~5.3",
+		"dibi/dibi": "~2.1"
 	},
-
+	"require-dev": {
+		"mockery/mockery": "~0.8",
+		"nette/nette": "2.0.*",
+		"phpunit/phpunit": "3.7.*",
+		"petrp/access": "0.2.*"
+	},
 	"autoload": {
         "classmap": ["Migration/"]
     }

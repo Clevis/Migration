@@ -10,6 +10,12 @@ use Exception;
  */
 class TemplateFactory extends Control
 {
+
+	public function templatePrepareFilters($template)
+	{
+		$template->registerFilter(new \Nette\Latte\Engine);
+	}
+
 	public static function create($file)
 	{
 		$control = new self;
@@ -25,6 +31,7 @@ class TemplateFactory extends Control
 		$dir = realpath(__DIR__ . '/..');
 		$documentRoot = realpath($_SERVER['DOCUMENT_ROOT']);
 		if (!$documentRoot) throw new Exception;
+		$documentRoot = rtrim($documentRoot, DIRECTORY_SEPARATOR);
 		$tmp = $documentRoot . DIRECTORY_SEPARATOR;
 		if ($documentRoot != $dir AND strncmp($dir, $tmp, strlen($tmp)) !== 0) throw new Exception;
 		return str_replace('\\', '/', substr($dir, strlen($documentRoot)));
