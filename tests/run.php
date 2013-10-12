@@ -3,7 +3,7 @@
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/libs/HttpPHPUnit/init.php';
 
-$http = new HttpPHPUnit;
+$http = new HttpPHPUnit(NULL, FALSE);;
 
 require_once __DIR__ . '/boot.php';
 

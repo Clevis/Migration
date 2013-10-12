@@ -2,9 +2,14 @@
 
 use Migration\Runner;
 
+interface DibiDriverMock extends \IDibiDriver, \IDibiResultDriver, \IDibiReflector
+{
+
+}
+
 /**
  * @covers Migration\Runner
- * @covers Migration\MigrationSqlFile
+ * @covers Migration\File
  * @author Petr Procházka
  */
 class Runner_run_Test extends TestCase
@@ -17,7 +22,7 @@ class Runner_run_Test extends TestCase
 	protected function setUp()
 	{
 		parent::setUp();
-		$driver = Mockery::mock('IDibiDriver, IDibiResultDriver, IDibiReflector');
+		$driver = Mockery::mock('DibiDriverMock');
 		class_alias(get_class($driver), 'Dibi' . get_class($driver) . 'Driver');
 		$dibi = new DibiConnection(array('driver' => get_class($driver), 'lazy' => true));
 		Access($dibi)->driver = $driver;
@@ -66,7 +71,7 @@ class Runner_run_Test extends TestCase
 	public function testNotReset()
 	{
 		$runner = new Runner_Mock($this->dibi, $this->printer);
-		$runner->sql = new Migration\MigrationSqlFile(__FILE__);
+		$runner->sql = new Migration\File(__FILE__, 'sql');
 
 		$this->printer->shouldReceive('printToExecute')->with(array($runner->sql))->once()->ordered();
 		$this->printer->shouldReceive('printExecute')->with($runner->sql, 5)->once()->ordered();
@@ -88,7 +93,7 @@ class Runner_run_Test extends TestCase
 	public function testReset()
 	{
 		$runner = new Runner_Mock($this->dibi, $this->printer);
-		$runner->sql = new Migration\MigrationSqlFile(__FILE__);
+		$runner->sql = new Migration\File(__FILE__, 'sql');
 
 		$this->printer->shouldReceive('printReset')->withNoArgs()->once()->ordered();
 		$this->printer->shouldReceive('printToExecute')->with(array($runner->sql))->once()->ordered();
@@ -131,7 +136,7 @@ class Runner_run_Test extends TestCase
 		$this->qar('SET NAMES utf8');
 		$this->qar('SET foreign_key_checks = 0');
 		$this->qar("SET time_zone = 'SYSTEM'");
-		$this->qar("SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO'");
+		$this->qar("SET sql_mode = 'TRADITIONAL'");
 		$this->runner->runSetup();
 		$this->assertTrue(true);
 	}
@@ -169,6 +174,8 @@ class Runner_run_Test extends TestCase
 
 	public function testGetAllMigrations()
 	{
+		$this->driver->shouldReceive('getResultColumns')->andReturn(array());
+
 		$this->qr("SELECT * FROM `migrations`", array(
 			array(
 				'id' => 1,
@@ -304,21 +311,17 @@ class Runner_run_Test extends TestCase
 		list($a, $b, $files) = $this->testGetAllFiles();
 
 		$this->driver->shouldReceive('begin')->with(NULL)->andReturn()->once()->ordered();
-		$this->qar("INSERT INTO `migrations` (`id`, `file`, `checksum`, `executed`) VALUES (NULL, '_1.sql', 'c4ca4238a0b923820dcc509a6f75849b', " . $this->driver->escape(new DateTime('now'), Dibi::DATETIME) . ")");
+		$this->qar("INSERT INTO `migrations` (`file`, `checksum`, `executed`) VALUES ('_1.sql', 'c4ca4238a0b923820dcc509a6f75849b', " . $this->driver->escape(new DateTime('now'), Dibi::DATETIME) . ")");
 		$this->driver->shouldReceive('getInsertId')->with(NULL)->andReturn(123)->once()->ordered();
 
-		$this->driver->shouldReceive('query')->with("\n\t\t\tSELECT foobar;\n")->once()->ordered();
-		$this->driver->shouldReceive('query')->with("\t\t\tDO WHATEVER;\n")->once()->ordered();
-		$this->driver->shouldReceive('query')->with("\t\t\tHELLO;\n")->once()->ordered();
+		$this->qar("SELECT foobar");
+		$this->qar("DO WHATEVER");
+		$this->qar("HELLO");
 
 		$this->qar("UPDATE `migrations` SET `ready`=1 WHERE `id` = '123'");
 		$this->driver->shouldReceive('commit')->with(NULL)->andReturn()->once()->ordered();
 
-		file_put_contents($a, '
-			SELECT foobar;
-			DO WHATEVER;
-			HELLO;
-		');
+		file_put_contents($a, 'SELECT foobar;DO WHATEVER;HELLO;');
 		$count = $this->runner->execute($files[$a]);
 		unlink($a);
 		$this->assertSame(3, $count);
@@ -329,21 +332,17 @@ class Runner_run_Test extends TestCase
 		list($a, $b, $files) = $this->testGetAllFiles();
 
 		$this->driver->shouldReceive('begin')->with(NULL)->andReturn()->once()->ordered();
-		$this->qar("INSERT INTO `migrations` (`id`, `file`, `checksum`, `executed`) VALUES (NULL, '_1.sql', 'c4ca4238a0b923820dcc509a6f75849b', " . $this->driver->escape(new DateTime('now'), Dibi::DATETIME) . ")");
+		$this->qar("INSERT INTO `migrations` (`file`, `checksum`, `executed`) VALUES ('_1.sql', 'c4ca4238a0b923820dcc509a6f75849b', " . $this->driver->escape(new DateTime('now'), Dibi::DATETIME) . ")");
 		$this->driver->shouldReceive('getInsertId')->with(NULL)->andReturn(123)->once()->ordered();
 
-		$this->driver->shouldReceive('query')->with("\n\t\t\tSELECT foobar;\n")->once()->ordered();
-		$this->driver->shouldReceive('query')->with("\t\t\tDO WHATEVER;\n")->once()->ordered();
-		$this->driver->shouldReceive('query')->with("\t\t\tHELLO\n\t\t")->once()->ordered();
+		$this->qar("SELECT foobar");
+		$this->qar("SELECT WHATEVER");
+		$this->qar("HELLO");
 
 		$this->qar("UPDATE `migrations` SET `ready`=1 WHERE `id` = '123'");
 		$this->driver->shouldReceive('commit')->with(NULL)->andReturn()->once()->ordered();
 
-		file_put_contents($a, '
-			SELECT foobar;
-			DO WHATEVER;
-			HELLO
-		');
+		file_put_contents($a, 'SELECT foobar;SELECT WHATEVER;HELLO');
 		$count = $this->runner->execute($files[$a]);
 		unlink($a);
 		$this->assertSame(3, $count);
@@ -354,11 +353,11 @@ class Runner_run_Test extends TestCase
 		list($a, $b, $files) = $this->testGetAllFiles();
 
 		$this->driver->shouldReceive('begin')->with(NULL)->andReturn()->once()->ordered();
-		$this->qar("INSERT INTO `migrations` (`id`, `file`, `checksum`, `executed`) VALUES (NULL, '_1.sql', 'c4ca4238a0b923820dcc509a6f75849b', " . $this->driver->escape(new DateTime('now'), Dibi::DATETIME) . ")");
+		$this->qar("INSERT INTO `migrations` (`file`, `checksum`, `executed`) VALUES ('_1.sql', 'c4ca4238a0b923820dcc509a6f75849b', " . $this->driver->escape(new DateTime('now'), Dibi::DATETIME) . ")");
 		$this->driver->shouldReceive('getInsertId')->with(NULL)->andReturn(123)->once()->ordered();
 
 		file_put_contents($a, "\n\t\t\n");
-		$this->setExpectedException('Migration\Exception', '_1.sql neobsahuje zadne sql.');
+		$this->setExpectedException('Migration\Exception');
 		$this->runner->execute($files[$a]);
 	}
 }

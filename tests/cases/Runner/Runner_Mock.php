@@ -45,7 +45,7 @@ class Runner_Mock extends Migration\Runner
 		return array_values($files);
 	}
 
-	protected function execute(Migration\MigrationSqlFile $sql)
+	protected function execute(Migration\File $sql)
 	{
 		$this->log[] = array(__FUNCTION__, $sql);
 		return 5;
