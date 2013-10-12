@@ -7,9 +7,9 @@
 		"dibi/dibi": "~2.1"
 	},
 	"require-dev": {
+		"php": "~5.4",
+		"nette/tester": "0.9.*",
 		"mockery/mockery": "~0.8",
-		"nette/nette": "2.0.*",
-		"phpunit/phpunit": "3.7.*",
 		"petrp/access": "0.2.*"
 	},
 	"autoload": {

@@ -1,18 +1,28 @@
 <?php
+namespace Migration\Tests;
 
+use DateTime;
+use dibi;
+use DibiConnection;
+use DibiRow;
+use InvalidArgumentException;
+use Migration;
 use Migration\Runner;
+use Mockery;
+use Tester;
+use Tester\Assert;
+
+require __DIR__ . '/bootstrap.php';
+require __DIR__ . '/mocks/RunnerMock.php';
+
 
 interface DibiDriverMock extends \IDibiDriver, \IDibiResultDriver, \IDibiReflector
 {
 
 }
 
-/**
- * @covers Migration\Runner
- * @covers Migration\File
- * @author Petr Procházka
- */
-class Runner_run_Test extends TestCase
+
+class RunnerTest extends Tester\TestCase
 {
 	private $dibi;
 	private $driver;
@@ -22,7 +32,7 @@ class Runner_run_Test extends TestCase
 	protected function setUp()
 	{
 		parent::setUp();
-		$driver = Mockery::mock('DibiDriverMock');
+		$driver = Mockery::mock('Migration\Tests\DibiDriverMock');
 		class_alias(get_class($driver), 'Dibi' . get_class($driver) . 'Driver');
 		$dibi = new DibiConnection(array('driver' => get_class($driver), 'lazy' => true));
 		Access($dibi)->driver = $driver;
@@ -32,19 +42,21 @@ class Runner_run_Test extends TestCase
 		$driver->shouldReceive('disconnect')->atMost()->once();
 		$driver->shouldReceive('escape')->andReturnUsing(function ($value, $type) {
 			switch ($type) {
-			case dibi::TEXT:
-				return "'$value'";
-			case dibi::IDENTIFIER:
-				return '`' . str_replace('`', '``', $value) . '`';
-			case dibi::BOOL:
-				return $value ? 1 : 0;
-			case dibi::DATE:
-				return $value instanceof DateTime ? $value->format("'Y-m-d'") : date("'Y-m-d'", $value);
-			case dibi::DATETIME:
-				return $value instanceof DateTime ? $value->format("'Y-m-d H:i:s'") : date("'Y-m-d H:i:s'", $value);
+				case dibi::TEXT:
+					return "'$value'";
+				case dibi::IDENTIFIER:
+					return '`' . str_replace('`', '``', $value) . '`';
+				case dibi::BOOL:
+					return $value ? 1 : 0;
+				case dibi::DATE:
+					return $value instanceof DateTime ? $value->format("'Y-m-d'") : date("'Y-m-d'", $value);
+				case dibi::DATETIME:
+					return $value instanceof DateTime ? $value->format("'Y-m-d H:i:s'") : date("'Y-m-d H:i:s'", $value);
 			}
 			throw new InvalidArgumentException('Unsupported type.');
 		});
+
+		$driver->shouldReceive('getResource');
 
 		$this->dibi = $dibi;
 		$this->driver = $driver;
@@ -70,7 +82,7 @@ class Runner_run_Test extends TestCase
 
 	public function testNotReset()
 	{
-		$runner = new Runner_Mock($this->dibi, $this->printer);
+		$runner = new RunnerMock($this->dibi, $this->printer);
 		$runner->sql = new Migration\File(__FILE__, 'sql');
 
 		$this->printer->shouldReceive('printToExecute')->with(array($runner->sql))->once()->ordered();
@@ -79,7 +91,7 @@ class Runner_run_Test extends TestCase
 
 		$runner->run(__DIR__ , false);
 
-		$this->assertSame(array(
+		Assert::same(array(
 			array('runSetup'),
 			array('lock'),
 			array('runInitMigrationTable'),
@@ -92,7 +104,7 @@ class Runner_run_Test extends TestCase
 
 	public function testReset()
 	{
-		$runner = new Runner_Mock($this->dibi, $this->printer);
+		$runner = new RunnerMock($this->dibi, $this->printer);
 		$runner->sql = new Migration\File(__FILE__, 'sql');
 
 		$this->printer->shouldReceive('printReset')->withNoArgs()->once()->ordered();
@@ -102,7 +114,7 @@ class Runner_run_Test extends TestCase
 
 		$runner->run(__DIR__ , true);
 
-		$this->assertSame(array(
+		Assert::same(array(
 			array('runSetup'),
 			array('lock'),
 			array('runWipe'),
@@ -116,19 +128,19 @@ class Runner_run_Test extends TestCase
 
 	public function testError()
 	{
-		$runner = new Runner_Mock($this->dibi, $this->printer);
+		$runner = new RunnerMock($this->dibi, $this->printer);
 		$runner->error = true;
 
 		$test = $this;
 		$this->printer->shouldReceive('printError')->with(new Mockery\Matcher\Closure(function ($e) use ($test) {
-			$test->assertInstanceOf('Migration\Exception', $e);
-			$test->assertSame('foo bar', $e->getMessage());
+			Assert::type('Migration\Exception', $e);
+			Assert::same('foo bar', $e->getMessage());
 			return true;
 		}))->once()->ordered();
 
 		$runner->run(__DIR__ , false);
 
-		$this->assertSame(array(), $runner->log);
+		Assert::same(array(), $runner->log);
 	}
 
 	public function testRunSetup()
@@ -138,7 +150,6 @@ class Runner_run_Test extends TestCase
 		$this->qar("SET time_zone = 'SYSTEM'");
 		$this->qar("SET sql_mode = 'TRADITIONAL'");
 		$this->runner->runSetup();
-		$this->assertTrue(true);
 	}
 
 	public function testRunWipe()
@@ -155,7 +166,6 @@ class Runner_run_Test extends TestCase
 		$this->qar('DROP TABLE `migrations`');
 		$this->qar('DROP VIEW `view_table`');
 		$this->runner->runWipe();
-		$this->assertTrue(true);
 	}
 
 	public function testRunInitMigrationTable()
@@ -169,7 +179,6 @@ class Runner_run_Test extends TestCase
 			PRIMARY KEY (`id`)
 		) ENGINE='InnoDB'");
 		$this->runner->runInitMigrationTable();
-		$this->assertTrue(true);
 	}
 
 	public function testGetAllMigrations()
@@ -194,21 +203,21 @@ class Runner_run_Test extends TestCase
 		));
 		$r = $this->runner->getAllMigrations();
 
-		$this->assertEquals(array(
+		Assert::equal(array(
 			'file' => new DibiRow(array(
-				'id' => 1,
-				'file' => 'file',
-				'checksum' => 'checksum',
-				'executed' => '2011-11-11',
-				'ready' => 1,
-			)),
+					'id' => 1,
+					'file' => 'file',
+					'checksum' => 'checksum',
+					'executed' => '2011-11-11',
+					'ready' => 1,
+				)),
 			'file2' => new DibiRow(array(
-				'id' => 2,
-				'file' => 'file2',
-				'checksum' => 'checksum2',
-				'executed' => '2011-11-12',
-				'ready' => 1,
-			)),
+					'id' => 2,
+					'file' => 'file2',
+					'checksum' => 'checksum2',
+					'executed' => '2011-11-12',
+					'ready' => 1,
+				)),
 		), $r);
 	}
 
@@ -222,18 +231,18 @@ class Runner_run_Test extends TestCase
 
 		$r = $this->runner->getAllFiles($tmp);
 
-		$this->assertSame(array($a, $b), array_keys($r));
+		Assert::same(array($a, $b), array_keys($r));
 
-		$this->assertSame('_1.sql', $r[$a]->file);
-		$this->assertSame('_2.sql', $r[$b]->file);
-		$this->assertSame('c4ca4238a0b923820dcc509a6f75849b', $r[$a]->checksum);
-		$this->assertSame('c81e728d9d4c2f636f067f89cc14862c', $r[$b]->checksum);
+		Assert::same('_1.sql', $r[$a]->file);
+		Assert::same('_2.sql', $r[$b]->file);
+		Assert::same('c4ca4238a0b923820dcc509a6f75849b', $r[$a]->checksum);
+		Assert::same('c81e728d9d4c2f636f067f89cc14862c', $r[$b]->checksum);
 		$tmp = new DateTime('now');
-		$this->assertSame($tmp->format('c'), $r[$a]->executed->format('c'));
+		Assert::same($tmp->format('c'), $r[$a]->executed->format('c'));
 		$tmp = new DateTime('now');
-		$this->assertSame($tmp->format('c'), $r[$b]->executed->format('c'));
-		$this->assertSame($a, $r[$a]->path);
-		$this->assertSame($b, $r[$b]->path);
+		Assert::same($tmp->format('c'), $r[$b]->executed->format('c'));
+		Assert::same($a, $r[$a]->path);
+		Assert::same($b, $r[$b]->path);
 
 		unlink($a);
 		unlink($b);
@@ -254,56 +263,59 @@ class Runner_run_Test extends TestCase
 			)),
 		), $files);
 
-		$this->assertSame(1, count($r));
-		$this->assertSame(array($files[$b]), $r);
+		Assert::same(1, count($r));
+		Assert::same(array($files[$b]), $r);
 	}
 
 	public function testGetToExecuteRemove()
 	{
 		list($a, $b, $files) = $this->testGetAllFiles();
 
-		$this->setExpectedException('Migration\Exception', '_3.sql se smazal.');
-		$this->runner->getToExecute(array(
-			'_3.sql' => new DibiRow(array(
-				'id' => 1,
-				'file' => '_3.sql',
-				'checksum' => 'c4ca4238a0b923820dcc509a6f75849b',
-				'executed' => '2011-11-11',
-				'ready' => 1,
-			)),
-		), $files);
+		Assert::exception(function () use ($files) {
+			$this->runner->getToExecute(array(
+				'_3.sql' => new DibiRow(array(
+					'id' => 1,
+					'file' => '_3.sql',
+					'checksum' => 'c4ca4238a0b923820dcc509a6f75849b',
+					'executed' => '2011-11-11',
+					'ready' => 1,
+				)),
+			), $files);
+		}, 'Migration\Exception', '_3.sql se smazal.');
 	}
 
 	public function testGetToExecuteChange()
 	{
 		list($a, $b, $files) = $this->testGetAllFiles();
 
-		$this->setExpectedException('Migration\Exception', '_1.sql se zmenil.');
-		$this->runner->getToExecute(array(
-			'_1.sql' => new DibiRow(array(
-				'id' => 1,
-				'file' => '_1.sql',
-				'checksum' => 'bbb',
-				'executed' => '2011-11-11',
-				'ready' => 1,
-			)),
-		), $files);
+		Assert::exception(function () use ($files) {
+			$this->runner->getToExecute(array(
+				'_1.sql' => new DibiRow(array(
+					'id' => 1,
+					'file' => '_1.sql',
+					'checksum' => 'bbb',
+					'executed' => '2011-11-11',
+					'ready' => 1,
+				)),
+			), $files);
+		}, 'Migration\Exception', '_1.sql se zmenil.');
 	}
 
 	public function testGetToExecuteNotReady()
 	{
 		list($a, $b, $files) = $this->testGetAllFiles();
 
-		$this->setExpectedException('Migration\Exception', '_1.sql se nedokoncil.');
-		$this->runner->getToExecute(array(
-			'_1.sql' => new DibiRow(array(
-				'id' => 1,
-				'file' => '_1.sql',
-				'checksum' => 'c4ca4238a0b923820dcc509a6f75849b',
-				'executed' => '2011-11-11',
-				'ready' => 0,
-			)),
-		), $files);
+		Assert::exception(function () use ($files) {
+			$this->runner->getToExecute(array(
+				'_1.sql' => new DibiRow(array(
+					'id' => 1,
+					'file' => '_1.sql',
+					'checksum' => 'c4ca4238a0b923820dcc509a6f75849b',
+					'executed' => '2011-11-11',
+					'ready' => 0,
+				)),
+			), $files);
+		}, 'Migration\Exception', '_1.sql se nedokoncil.');
 	}
 
 	public function testExecute()
@@ -324,7 +336,7 @@ class Runner_run_Test extends TestCase
 		file_put_contents($a, 'SELECT foobar;DO WHATEVER;HELLO;');
 		$count = $this->runner->execute($files[$a]);
 		unlink($a);
-		$this->assertSame(3, $count);
+		Assert::same(3, $count);
 	}
 
 	public function testExecuteNoSemicolon()
@@ -345,7 +357,7 @@ class Runner_run_Test extends TestCase
 		file_put_contents($a, 'SELECT foobar;SELECT WHATEVER;HELLO');
 		$count = $this->runner->execute($files[$a]);
 		unlink($a);
-		$this->assertSame(3, $count);
+		Assert::same(3, $count);
 	}
 
 	public function testExecuteEmpty()
@@ -357,7 +369,13 @@ class Runner_run_Test extends TestCase
 		$this->driver->shouldReceive('getInsertId')->with(NULL)->andReturn(123)->once()->ordered();
 
 		file_put_contents($a, "\n\t\t\n");
-		$this->setExpectedException('Migration\Exception');
-		$this->runner->execute($files[$a]);
+
+		$ex = Assert::exception(function () use ($files, $a) {
+			$this->runner->execute($files[$a]);
+		}, 'Migration\Exception');
+
+		Assert::same('_1.sql neobsahuje zadne sql.', $ex->getPrevious()->getMessage());
 	}
 }
+
+run(new RunnerTest);

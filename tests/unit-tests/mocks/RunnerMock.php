@@ -1,9 +1,13 @@
 <?php
+namespace Migration\Tests;
+
+use Migration;
+
 
 /**
  * @author Petr Procházka
  */
-class Runner_Mock extends Migration\Runner
+class RunnerMock extends Migration\Runner
 {
 	public $log = array();
 	public $sql;
