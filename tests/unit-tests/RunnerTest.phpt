@@ -7,7 +7,6 @@ use DibiConnection;
 use DibiRow;
 use InvalidArgumentException;
 use Migration;
-use Migration\Runner;
 use Mockery;
 use Tester;
 use Tester\Assert;
@@ -24,6 +23,7 @@ interface DibiDriverMock extends \IDibiDriver, \IDibiResultDriver, \IDibiReflect
 
 class RunnerTest extends Tester\TestCase
 {
+
 	private $dibi;
 	private $driver;
 	private $printer;
@@ -34,14 +34,15 @@ class RunnerTest extends Tester\TestCase
 		parent::setUp();
 		$driver = Mockery::mock('Migration\Tests\DibiDriverMock');
 		class_alias(get_class($driver), 'Dibi' . get_class($driver) . 'Driver');
-		$dibi = new DibiConnection(array('driver' => get_class($driver), 'lazy' => true));
+		$dibi = new DibiConnection(array('driver' => get_class($driver), 'lazy' => TRUE));
 		Access($dibi)->driver = $driver;
 		$printer = Mockery::mock('Migration\IPrinter');
 
 		$driver->shouldReceive('connect')->atMost()->once();
 		$driver->shouldReceive('disconnect')->atMost()->once();
 		$driver->shouldReceive('escape')->andReturnUsing(function ($value, $type) {
-			switch ($type) {
+			switch ($type)
+			{
 				case dibi::TEXT:
 					return "'$value'";
 				case dibi::IDENTIFIER:
@@ -61,7 +62,7 @@ class RunnerTest extends Tester\TestCase
 		$this->dibi = $dibi;
 		$this->driver = $driver;
 		$this->printer = $printer;
-		$this->runner = Access(new Runner($this->dibi, $this->printer));
+		$this->runner = Access(new Migration\Runner($this->dibi, $this->printer));
 	}
 
 	private function qar($sql, $r = 0)
@@ -75,9 +76,9 @@ class RunnerTest extends Tester\TestCase
 		$this->driver->shouldReceive('query')->with($sql)->andReturn($this->driver)->once()->ordered();
 		foreach ($data as $row)
 		{
-			$this->driver->shouldReceive('fetch')->with(true)->andReturn($row)->once()->ordered();
+			$this->driver->shouldReceive('fetch')->with(TRUE)->andReturn($row)->once()->ordered();
 		}
-		$this->driver->shouldReceive('fetch')->with(true)->andReturn()->once()->ordered();
+		$this->driver->shouldReceive('fetch')->with(TRUE)->andReturn()->once()->ordered();
 	}
 
 	public function testNotReset()
@@ -89,7 +90,7 @@ class RunnerTest extends Tester\TestCase
 		$this->printer->shouldReceive('printExecute')->with($runner->sql, 5)->once()->ordered();
 		$this->printer->shouldReceive('printDone')->withNoArgs()->once()->ordered();
 
-		$runner->run(__DIR__ , false);
+		$runner->run(__DIR__, FALSE);
 
 		Assert::same(array(
 			array('runSetup'),
@@ -112,7 +113,7 @@ class RunnerTest extends Tester\TestCase
 		$this->printer->shouldReceive('printExecute')->with($runner->sql, 5)->once()->ordered();
 		$this->printer->shouldReceive('printDone')->withNoArgs()->once()->ordered();
 
-		$runner->run(__DIR__ , true);
+		$runner->run(__DIR__, TRUE);
 
 		Assert::same(array(
 			array('runSetup'),
@@ -129,16 +130,17 @@ class RunnerTest extends Tester\TestCase
 	public function testError()
 	{
 		$runner = new RunnerMock($this->dibi, $this->printer);
-		$runner->error = true;
+		$runner->error = TRUE;
 
 		$test = $this;
-		$this->printer->shouldReceive('printError')->with(new Mockery\Matcher\Closure(function ($e) use ($test) {
+		$this->printer->shouldReceive('printError')->with(new Mockery\Matcher\Closure(function ($e) use ($test)
+		{
 			Assert::type('Migration\Exception', $e);
 			Assert::same('foo bar', $e->getMessage());
-			return true;
+			return TRUE;
 		}))->once()->ordered();
 
-		$runner->run(__DIR__ , false);
+		$runner->run(__DIR__, FALSE);
 
 		Assert::same(array(), $runner->log);
 	}
@@ -159,7 +161,7 @@ class RunnerTest extends Tester\TestCase
 			array('name' => 'foo'),
 			array('name' => 'bar'),
 			array('name' => 'migrations'),
-			array('name' => 'view_table', 'view' => true),
+			array('name' => 'view_table', 'view' => TRUE),
 		))->once()->ordered();
 		$this->qar('DROP TABLE `foo`');
 		$this->qar('DROP TABLE `bar`');
