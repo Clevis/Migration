@@ -65,6 +65,11 @@ class RunnerTest extends Tester\TestCase
 		$this->runner = Access(new Migration\Runner($this->dibi, $this->printer));
 	}
 
+	protected function tearDown()
+	{
+		Mockery::close();
+	}
+
 	private function qar($sql, $r = 0)
 	{
 		$this->driver->shouldReceive('query')->with($sql)->once()->ordered();
