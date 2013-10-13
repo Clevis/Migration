@@ -1,6 +1,6 @@
 <?php
 
-namespace Clevis\Migration\Tests;
+namespace Migration\Tests;
 
 use Nette\Object;
 use SystemContainer;

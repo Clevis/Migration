@@ -4,6 +4,7 @@ namespace Migration\Extensions;
 
 use DibiConnection;
 
+
 class DibiPhp extends SimplePhp
 {
 

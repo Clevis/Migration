@@ -6,6 +6,7 @@ use DibiConnection;
 use Migration;
 use Nette\Config\Configurator;
 use Nette;
+use Orm;
 
 
 /**
@@ -13,7 +14,7 @@ use Nette;
  */
 class OrmPhp extends SimplePhp
 {
-
+	/** @var Orm\IRepositoryContainer */
 	private $orm;
 
 	public function __construct(Configurator $configurator, Nette\DI\Container $context, DibiConnection $dibi)
