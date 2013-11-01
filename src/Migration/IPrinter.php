@@ -1,6 +1,8 @@
 <?php
-
 namespace Migration;
+
+use Migration\Entities\File;
+use Migration\Exceptions\Exception;
 
 /**
  * @author Petr Procházka
@@ -8,28 +10,42 @@ namespace Migration;
 interface IPrinter
 {
 
-	/** Migrace se nejprve resetovala. */
+	/**
+	 * Database has been wiped. Occurs only in reset mode.
+	 *
+	 * @return void
+	 */
 	public function printReset();
 
 	/**
-	 * Seznam migraci ktere se spusti.
-	 * @param array of File
+	 * List of migrations which should be executed has been completed.
+	 *
+	 * @param  Entities\File[]
+	 * @return void
 	 */
 	public function printToExecute(array $toExecute);
 
 	/**
-	 * Provedena migrace.
-	 * @param File
-	 * @param int Pocet queries
+	 * A migration has been successfully executed.
+	 *
+	 * @param  File
+	 * @param  int  number of executed queries
+	 * @return void
 	 */
 	public function printExecute(File $file, $count);
 
-	/** Vse vporadku/dokonceno */
+	/**
+	 * All migrations have been successfully executed.
+	 *
+	 * @return void
+	 */
 	public function printDone();
 
 	/**
-	 * Nastala chyba.
-	 * @param Migration\Exception
+	 * An error has occured during execution of a migration.
+	 *
+	 * @param  Exception
+	 * @return void
 	 */
 	public function printError(Exception $e);
 

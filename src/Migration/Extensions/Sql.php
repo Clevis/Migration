@@ -1,8 +1,6 @@
 <?php
-
 namespace Migration\Extensions;
 
-use Nette\Object;
 use DibiConnection;
 use Migration;
 use RuntimeException;
@@ -11,7 +9,7 @@ use RuntimeException;
 /**
  * @author Petr Procházka
  */
-class Sql extends Object implements Migration\IExtension
+class Sql implements Migration\IExtensionHandler
 {
 
 	/** @var DibiConnection */
@@ -35,12 +33,12 @@ class Sql extends Object implements Migration\IExtension
 	}
 
 	/**
-	 * @param Migration\File
+	 * @param Migration\Entities\File
 	 * @return int number of queries
 	 */
-	public function execute(Migration\File $sql)
+	public function execute(Migration\Entities\File $sql)
 	{
-		$count = $this->loadFile($sql->path);
+		$count = $this->loadFile($sql->getPath());
 		if ($count === 0)
 		{
 			throw new Migration\Exception("{$sql->file} neobsahuje zadne sql.");

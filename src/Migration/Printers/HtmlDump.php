@@ -1,66 +1,88 @@
 <?php
-
 namespace Migration\Printers;
 
-use Nette\Object;
+use Migration\Exceptions\Exception;
 use Migration;
 
 
 /**
  * Echoje informace na vystup jako html.
+ *
  * @author Petr Procházka
  */
-class HtmlDump extends Object implements Migration\IPrinter
+class HtmlDump implements Migration\IPrinter
 {
 
-	/** Migrace se nejprve resetovala. */
+	/** @var int number of migrations to be executed */
+	private $count;
+
+	/** @var int order of last executed migration */
+	private $index;
+
+	/**
+	 * @inheritdoc
+	 */
 	public function printReset()
 	{
-		$this->dump('RESET');
+		$this->output('RESET: All tables, views and data has been destroyed!');
 	}
 
 	/**
-	 * Seznam migraci ktere se spusti.
-	 * @param array of Migration\File
+	 * @inheritdoc
 	 */
 	public function printToExecute(array $toExecute)
 	{
+		if ($toExecute)
+		{
+			$this->output(count($toExecute) . ' migrations need to be executed.');
+		}
+		else
+		{
+			$this->output('No migration needs to be executed.');
+		}
 
+		$this->count = count($toExecute);
+		$this->index = 0;
 	}
 
 	/**
-	 * Provedena migrace.
-	 * @param Migration\File
-	 * @param int Pocet queries
+	 * @inheritdoc
 	 */
-	public function printExecute(Migration\File $sql, $count)
+	public function printExecute(Migration\Entities\File $file, $count)
 	{
-		$this->dump($sql->file . '; ' . $count . ' queries');
+		$format = '%0' . strlen($this->count) . 'd';
+		$name = htmlspecialchars($file->group->name . '/' . $file->name);
+		$this->output(sprintf(
+			$format . '/' . $format . ': <strong>%s</strong> (%d %s)',
+			++$this->index, $this->count, $name, $count, ($count === 1 ? 'query' : 'queries')
+		));
 	}
 
-	/** Vse vporadku/dokonceno */
+	/**
+	 * @inheritdoc
+	 */
 	public function printDone()
 	{
-		$this->dump('OK');
+		$this->output('OK', 'success');
 	}
 
 	/**
-	 * Nastala chyba.
-	 * @param Migration\Exception
+	 * @inheritdoc
 	 */
-	public function printError(Migration\Exception $e)
+	public function printError(Exception $e)
 	{
-		$this->dump('ERROR: ' . $e->getMessage());
+		$this->output('ERROR: ' . htmlspecialchars($e->getMessage()), 'error');
 		throw $e;
 	}
 
-	/** @var string */
-	protected function dump($s)
+	/**
+	 * @param  string HTML string
+	 * @param  string
+	 * @return void
+	 */
+	protected function output($s, $class = 'info')
 	{
-		$s = htmlspecialchars($s);
-		echo '<pre><h1>';
-		echo $s;
-		echo '</h1></pre>';
+		echo "<div class=\"$class\">$s</div>\n";
 	}
 
 }

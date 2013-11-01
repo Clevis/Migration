@@ -1,72 +1,87 @@
 <?php
-
 namespace Migration\Printers;
 
-use Nette\Object;
+use Migration\Exceptions\Exception;
 use Migration;
 
 
 /**
- * Vypisuje vystup pro konzoly
- * @author Mikulas DIte
+ * @author Mikulas Dite, Jan Tvrdik
  */
-class Console extends Object implements Migration\IPrinter
+class Console implements Migration\IPrinter
 {
 
+	/** console colors */
 	const COLOR_ERROR = '1;31';
 	const COLOR_NOTICE = '1;34';
 	const COLOR_SUCCESS = '1;32';
 
-	/** Migrace se nejprve resetovala. */
+	/** @var bool */
+	private $useColors;
+
+	public function __construct()
+	{
+		$this->useColors = $this->detectColorSupport();
+	}
+
+	/**
+	 * @inheritdoc
+	 */
 	public function printReset()
 	{
 		$this->output('RESET', self::COLOR_NOTICE);
 	}
 
 	/**
-	 * Seznam migraci ktere se spusti.
-	 * @param array of Migration\File
+	 * @inheritdoc
 	 */
 	public function printToExecute(array $toExecute)
 	{
-
+		if ($toExecute)
+		{
+			$this->output(count($toExecute) . ' migrations need to be executed.');
+		}
+		else
+		{
+			$this->output('No migration needs to be executed.');
+		}
 	}
 
 	/**
-	 * Provedena migrace.
-	 * @param Migration\File
-	 * @param int Pocet queries
+	 * @inheritdoc
 	 */
-	public function printExecute(Migration\File $sql, $count)
+	public function printExecute(Migration\Entities\File $file, $count)
 	{
-		$this->output($sql->file . '; ' . $count . ' queries');
+		$this->output($file->group->name . '/' . $file->name . '; ' . $count . ' queries');
 	}
 
-	/** Vse vporadku/dokonceno */
+	/**
+	 * @inheritdoc
+	 */
 	public function printDone()
 	{
 		$this->output('OK', self::COLOR_SUCCESS);
 	}
 
 	/**
-	 * Nastala chyba.
-	 * @param Migration\Exception
+	 * @inheritdoc
 	 */
-	public function printError(Migration\Exception $e)
+	public function printError(Exception $e)
 	{
 		$this->output('ERROR: ' . $e->getMessage(), self::COLOR_ERROR);
 		throw $e;
 	}
 
-	/** @var string */
+	/**
+	 * Prints text to a console, optionally in a specific color.
+	 *
+	 * @param  string
+	 * @param  string|NULL self::COLOR_*
+	 * @return void
+	 */
 	protected function output($s, $color = NULL)
 	{
-		$useColors = preg_match('#^xterm|^screen#', getenv('TERM'));
-
-		if ($color && !in_array($color, self::getColors())) {
-			throw new \InvalidArgumentException('Invalid color specified, expected `self::COLOR_[SUCCESS|NOTICE|ERROR]`.');
-		}
-		if (!$color || !$useColors)
+		if ($color === NULL || !$this->useColors)
 		{
 			echo "$s\n";
 		}
@@ -76,9 +91,12 @@ class Console extends Object implements Migration\IPrinter
 		}
 	}
 
-	protected static function getColors()
+	/**
+	 * @return bool TRUE if terminal support colors, FALSE otherwise
+	 */
+	protected function detectColorSupport()
 	{
-		return array(self::COLOR_SUCCESS, self::COLOR_NOTICE, self::COLOR_ERROR);
+		return (bool) preg_match('#^xterm|^screen|^cygwin#', getenv('TERM'));
 	}
 
 }

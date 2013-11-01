@@ -1,15 +1,13 @@
 <?php
-
 namespace Migration\Extensions;
 
-use Nette\Object;
 use Migration;
 
 
 /**
  * @author Petr Procházka
  */
-class SimplePhp extends Object implements Migration\IExtension
+class SimplePhp implements Migration\IExtensionHandler
 {
 
 	/** @var array name => value */

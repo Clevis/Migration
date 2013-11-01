@@ -1,5 +1,4 @@
 <?php
-
 namespace Migration\Extensions;
 
 use DibiConnection;

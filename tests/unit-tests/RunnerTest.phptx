@@ -1,4 +1,10 @@
 <?php
+/**
+ * Test: Migration\Runner
+ *
+ * @testCase Migration\Tests\RunnerTest
+ */
+
 namespace Migration\Tests;
 
 use DateTime;
