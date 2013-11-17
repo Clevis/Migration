@@ -1,0 +1,26 @@
+{
+	"name": "clevis/migrations",
+	"type": "library",
+	"description": "Simple database migrations runner",
+	"license": "MIT",
+	"authors": [
+		{
+			"name": "Clevis s.r.o.",
+			"homepage": "http://www.clevis.cz/"
+		}
+	],
+	"require": {
+		"php": "~5.3",
+		"dibi/dibi": "~2.1"
+	},
+	"require-dev": {
+		"php": "~5.4",
+		"nette/tester": "0.9.*",
+		"mockery/mockery": "@dev"
+	},
+	"autoload": {
+		"psr-0": {
+			"Migrations\\": "src/"
+		}
+	}
+}
