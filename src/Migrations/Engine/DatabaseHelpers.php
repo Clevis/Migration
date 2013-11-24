@@ -48,12 +48,19 @@ class DatabaseHelpers
 	/**
 	 * Drops all tables and views in database.
 	 *
-	 * @return array (0 => number of dropped tables, 1 => number of dropped views)
+	 * @return array (
+	 *      0 => number of dropped tables,
+	 *      1 => number of dropped views,
+	 *      2 => number of dropped procedures,
+	 *      3 => number of dropped functions,
+	 * )
 	 */
 	public function wipeDatabase()
 	{
 		$tablesCount = 0;
 		$viewsCount = 0;
+		$proceduresCount = 0;
+		$functionsCount = 0;
 
 		foreach ($this->dibi->getDatabaseInfo()->getTables() as $table)
 		{
@@ -73,7 +80,22 @@ class DatabaseHelpers
 			$this->dibi->query('DROP %sql %n', $type, $table->getName());
 		}
 
-		return array($tablesCount, $viewsCount);
+		$result = $this->dibi->query('
+			SELECT ROUTINE_TYPE AS [type], ROUTINE_NAME AS [name]
+			FROM information_schema.ROUTINES
+			WHERE ROUTINE_SCHEMA = DATABASE()
+		');
+
+		foreach ($result as $row)
+		{
+			if ($row->type === 'PROCEDURE') $proceduresCount++;
+			elseif ($row->type === 'FUNCTION') $functionsCount++;
+			else throw new Migrations\Exceptions\ImpossibleStateException();
+
+			$this->dibi->query('DROP %sql %n', $row->type, $row->name);
+		}
+
+		return array($tablesCount, $viewsCount, $proceduresCount, $functionsCount);
 	}
 
 	/**

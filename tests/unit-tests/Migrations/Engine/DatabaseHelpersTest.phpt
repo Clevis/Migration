@@ -111,7 +111,8 @@ class DatabaseHelpersTest extends TestCase
 	public function testWipeDatabase()
 	{
 		$this->createDummyStructures();
-		$this->dbHelpers->wipeDatabase();
+		$counts = $this->dbHelpers->wipeDatabase();
+		Assert::same([1, 1, 1, 1], $counts);
 		$this->createDummyStructures();
 	}
 
@@ -125,6 +126,8 @@ class DatabaseHelpersTest extends TestCase
 	{
 		$this->dibi->query('CREATE TABLE [foo] ([id] INT)');
 		$this->dibi->query('CREATE VIEW [bar] AS SELECT * FROM [foo]');
+		$this->dibi->query('CREATE PROCEDURE [proc] () SELECT * FROM [foo]');
+		$this->dibi->query('CREATE FUNCTION [fnc] () RETURNS int(10) RETURN 1');
 	}
 
 }
