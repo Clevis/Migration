@@ -1,6 +1,6 @@
 <?php
 /**
- * Test: Migrations\Engine\Finder
+ * Test: Migrations\Engine\DatabaseHelpersTest
  *
  * @testCase
  */
