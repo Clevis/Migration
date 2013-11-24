@@ -1,4 +1,5 @@
 /composer.lock
 /tests/temp/*
 !/tests/temp/.gitkeep
+/tests/unit-tests/config.json
 /vendor/
