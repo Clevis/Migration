@@ -7,7 +7,7 @@ use Migrations\Entities\ExecutionRecord;
 use Migrations\Entities\File;
 
 
-class MigrationsTable
+class MigrationsTable implements IExecutionLog
 {
 
 	/** @var DibiConnection */
@@ -41,7 +41,7 @@ class MigrationsTable
 	 *
 	 * @return void
 	 */
-	public function create()
+	public function init()
 	{
 		$this->dibi->query('
 			CREATE TABLE IF NOT EXISTS %n', $this->tableName, '(

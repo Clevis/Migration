@@ -56,16 +56,16 @@ class MigrationsTableTest extends TestCase
 		Assert::same('mig', $this->table->getName());
 	}
 
-	public function testCreate()
+	public function testInit()
 	{
-		$this->table->create();
-		$this->table->create(); // can be called twice!
+		$this->table->init();
+		$this->table->init(); // can be called twice!
 		$this->dibi->query('SELECT * FROM [mig]');
 	}
 
 	public function testDrop()
 	{
-		$this->table->create();
+		$this->table->init();
 		$this->table->drop();
 		$this->dibi->query('CREATE TABLE [mig] ([id] INT)');
 	}
@@ -73,7 +73,7 @@ class MigrationsTableTest extends TestCase
 	public function testLogMigrationBeforeStart()
 	{
 		$file = $this->createDummyFile();
-		$this->table->create();
+		$this->table->init();
 
 		$id = $this->table->logMigrationBeforeStart($file);
 		Assert::type('int', $id);
@@ -87,7 +87,7 @@ class MigrationsTableTest extends TestCase
 	public function testLogMigrationCompleted()
 	{
 		$file = $this->createDummyFile();
-		$this->table->create();
+		$this->table->init();
 		$id = $this->table->logMigrationBeforeStart($file);
 
 		$this->table->logMigrationCompleted($id);
@@ -97,7 +97,7 @@ class MigrationsTableTest extends TestCase
 	public function testGetAllRecords()
 	{
 		$file = $this->createDummyFile();
-		$this->table->create();
+		$this->table->init();
 		$id = $this->table->logMigrationBeforeStart($file);
 
 		$records = $this->table->getAllRecords();
