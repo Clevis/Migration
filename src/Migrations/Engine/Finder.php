@@ -11,7 +11,7 @@ class Finder
 	/**
 	 * Finds files in given groups.
 	 *
-	 * @param  Group[] list of registered groups
+	 * @param  Group[] list of enabled groups
 	 * @param  string[] list of known file extensions
 	 * @return File[]
 	 * @throws \Migrations\Exceptions\Exception
@@ -21,7 +21,6 @@ class Finder
 		$files = array();
 		foreach ($groups as $group)
 		{
-			if (!$group->enabled) continue;
 			$items = $this->getFiles($group->directory);
 			foreach ($items as $fileName)
 			{

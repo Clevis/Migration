@@ -11,9 +11,6 @@ class Group
 	/** @var string */
 	public $name;
 
-	/** @var bool */
-	public $enabled;
-
 	/** @var string absolute path to the directory */
 	public $directory;
 
