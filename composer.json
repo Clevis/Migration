@@ -11,7 +11,8 @@
 	],
 	"require": {
 		"php": "~5.3",
-		"dibi/dibi": "~2.1"
+		"pimple/pimple": "~2.0@dev",
+		"dibi/dibi": "dev-release-2.1.x"
 	},
 	"require-dev": {
 		"php": "~5.4",
@@ -20,7 +21,7 @@
 	},
 	"autoload": {
 		"psr-0": {
-			"Migrations\\": "src/"
+			"Migrations\\": ["src/", "src.copy/"]
 		}
 	}
 }

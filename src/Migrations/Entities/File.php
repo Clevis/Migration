@@ -30,4 +30,14 @@ class File
 		return $this->group->directory . '/' . $this->name;
 	}
 
+	/**
+	 * Returns name of this file prefixed with name of group it belongs to.
+	 *
+	 * @return string
+	 */
+	public function getFullName()
+	{
+		return $this->group->name . '/' . $this->name;
+	}
+
 }
