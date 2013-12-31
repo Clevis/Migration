@@ -4,7 +4,7 @@ namespace Migration\Extensions;
 
 use DibiConnection;
 use Migration;
-use Nette\Config\Configurator;
+use Nette\Configurator;
 use Nette;
 
 
