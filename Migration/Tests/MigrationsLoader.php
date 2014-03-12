@@ -29,7 +29,7 @@ class MigrationsLoader extends Object
 	{
 		if (!$this->context->parameters['migrations']['enabled']) return;
 
-		$connection = $this->context->dibiConnection;
+		$connection = $this->context->getService('dibiConnection');
 		$dbNamePrefix = $this->context->parameters['testDbPrefix'] . date('Ymd_His') . '_';
 		$i = 1;
 		do
