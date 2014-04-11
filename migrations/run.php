@@ -10,7 +10,11 @@ set_time_limit(0);
 ini_set('memory_limit', '1G');
 
 $configurator = new App\Configurator;
-$configurator->enableDebugger();
+if (file_exists(__DIR__ . '/../.dev'))
+{
+	$configurator->setDebugMode(TRUE); // setup debug environment just by creating a file
+}
+$configurator->enableDebugger(__DIR__ . '/../log');
 $configurator->createRobotLoader()->register();
 
 $context = $configurator->createContainer();
