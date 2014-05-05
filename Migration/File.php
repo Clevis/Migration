@@ -70,6 +70,12 @@ class File extends Object
 		return $this->checksum;
 	}
 
+	/** @return string */
+	public function getChecksumCrlf()
+	{
+		return md5(str_replace("\r\n", "\n", file_get_contents($this->path)));
+	}
+
 	/** @return DateTime */
 	public function getExecuted()
 	{

@@ -192,7 +192,9 @@ class Runner extends Object
 		{
 			if (isset($migrations[$sql->file]))
 			{
-				if ($migrations[$sql->file]->checksum !== $sql->checksum)
+				$file = $migrations[$sql->file];
+
+				if ($file->checksum !== $sql->checksum AND $file->checksum !== $sql->checksumCrlf)
 				{
 					throw new Exception("{$sql->file} se zmenil.");
 				}
