@@ -2,8 +2,8 @@
 
 namespace Clevis\Migration\Tests;
 
+use Nette\DI;
 use Nette\Object;
-use SystemContainer;
 use Migration;
 
 
@@ -13,11 +13,11 @@ use Migration;
 class MigrationsLoader extends Object
 {
 
-	/** @var SystemContainer */
+	/** @var DI\Container */
 	private $context;
 
 
-	public function __construct(SystemContainer $context)
+	public function __construct(DI\Container $context)
 	{
 		$this->context = $context;
 	}
